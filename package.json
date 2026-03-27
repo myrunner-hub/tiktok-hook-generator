@@ -1,0 +1,22 @@
+{
+  "name": "new-folder-(2)",
+  "version": "1.0.0",
+  "description": "TikTok Hook Generator MVP",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "next": "^16.2.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@netlify/plugin-nextjs": "^5.15.9"
+  }
+}
