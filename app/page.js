@@ -13,14 +13,55 @@ export default function HomePage() {
   const [hooks, setHooks] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [isPaywalled, setIsPaywalled] = useState(false);
+  const [hasPaidAccess, setHasPaidAccess] = useState(false);
 
   useEffect(() => {
-    const hasUsedFreeGeneration =
-      typeof window !== "undefined" &&
-      localStorage.getItem(FREE_GENERATION_STORAGE_KEY) === "true";
-    setIsPaywalled(hasUsedFreeGeneration);
+    const initializeAccess = async () => {
+      const hasUsedFreeGeneration =
+        typeof window !== "undefined" &&
+        localStorage.getItem(FREE_GENERATION_STORAGE_KEY) === "true";
+      let paidAccess = false;
+
+      try {
+        const statusResponse = await fetch("/api/paid-status");
+        const statusData = await statusResponse.json();
+        paidAccess = Boolean(statusData?.paid);
+      } catch {
+        paidAccess = false;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const isUpgraded = params.get("upgraded") === "true";
+      const sessionId = params.get("session_id");
+
+      if (isUpgraded && sessionId) {
+        try {
+          const verifyResponse = await fetch("/api/verify-checkout-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId }),
+          });
+          const verifyData = await verifyResponse.json();
+          if (!verifyResponse.ok || !verifyData?.paid) {
+            throw new Error(verifyData.error || "Failed to verify payment.");
+          }
+          paidAccess = true;
+          setError("");
+        } catch (err) {
+          setError(err.message || "Unable to verify upgrade.");
+        } finally {
+          window.history.replaceState({}, "", window.location.pathname);
+        }
+      }
+
+      setHasPaidAccess(paidAccess);
+      setIsPaywalled(hasUsedFreeGeneration && !paidAccess);
+    };
+
+    initializeAccess();
   }, []);
 
   const generateHooks = async () => {
@@ -56,8 +97,10 @@ export default function HomePage() {
 
       setHooks(data.hooks || []);
       setCopiedIndex(null);
-      localStorage.setItem(FREE_GENERATION_STORAGE_KEY, "true");
-      setIsPaywalled(true);
+      if (!hasPaidAccess) {
+        localStorage.setItem(FREE_GENERATION_STORAGE_KEY, "true");
+        setIsPaywalled(true);
+      }
     } catch (err) {
       setError(err.message || "Something went wrong.");
     } finally {
@@ -75,13 +118,30 @@ export default function HomePage() {
     }
   };
 
-  const onUpgradeClick = () => {
-    setError("Stripe integration coming soon. Upgrade flow placeholder only.");
+  const onUpgradeClick = async () => {
+    setError("");
+    setUpgradeLoading(true);
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.url) {
+        throw new Error(data.error || "Failed to start checkout.");
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err.message || "Unable to open checkout.");
+    } finally {
+      setUpgradeLoading(false);
+    }
   };
 
-  const resetFreeTrial = () => {
+  const resetFreeTrial = async () => {
     localStorage.removeItem(FREE_GENERATION_STORAGE_KEY);
+    await fetch("/api/clear-paid-access", { method: "POST" });
     setIsPaywalled(false);
+    setHasPaidAccess(false);
     setHooks([]);
     setError("");
     setCopiedIndex(null);
@@ -164,8 +224,9 @@ export default function HomePage() {
               type="button"
               className="button upgrade"
               onClick={onUpgradeClick}
+              disabled={upgradeLoading}
             >
-              Upgrade
+              {upgradeLoading ? "Redirecting..." : "Upgrade"}
             </button>
           </div>
         )}
