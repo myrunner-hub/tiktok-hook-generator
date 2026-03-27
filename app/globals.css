@@ -36,6 +36,107 @@ h1 {
   font-size: clamp(1.6rem, 4vw, 2.2rem);
 }
 
+.hero {
+  padding-bottom: 8px;
+}
+
+.hero-title {
+  font-weight: 800;
+}
+
+.hero-subtitle {
+  margin: 12px 0 16px;
+  color: #374151;
+  line-height: 1.5;
+  font-size: 1rem;
+}
+
+.trust-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.chip {
+  background: #eef2ff;
+  border: 1px solid #e0e7ff;
+  color: #3730a3;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.example-wrap {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+
+.example-title {
+  font-weight: 800;
+  margin-bottom: 10px;
+  color: #111827;
+}
+
+.examples-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.example-hook {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #111827;
+  font-weight: 600;
+}
+
+.how-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.how-step {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.how-num {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: #111827;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+}
+
+.how-text {
+  font-weight: 800;
+  color: #111827;
+}
+
+.cta-small {
+  margin: 10px 0 0;
+  color: #6b7280;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
 .subtitle {
   margin: 12px 0 20px;
   color: #4b5563;
@@ -129,6 +230,50 @@ h1 {
   font-weight: 600;
 }
 
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  z-index: 50;
+}
+
+.modal {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+}
+
+.modal-title {
+  font-weight: 900;
+  font-size: 1.1rem;
+  color: #111827;
+}
+
+.modal-subtitle {
+  margin-top: 8px;
+  color: #4b5563;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.modal-error {
+  margin-top: 10px;
+}
+
+.modal-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .hooks-list {
   margin: 20px 0 0;
   padding: 0 0 0 24px;
@@ -169,5 +314,9 @@ h1 {
   .paywall-box {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .how-grid {
+    grid-template-columns: 1fr;
   }
 }

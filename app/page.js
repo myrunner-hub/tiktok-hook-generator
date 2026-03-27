@@ -5,6 +5,13 @@ import { useEffect, useState } from "react";
 const toneOptions = ["funny", "dramatic", "educational", "controversial"];
 const FREE_GENERATION_STORAGE_KEY = "tt_hookgen_used_free_generation";
 const IS_DEV = process.env.NODE_ENV !== "production";
+const EMAIL_CAPTURE_KEY = "tt_hookgen_email_captured_v1";
+
+const exampleHooks = [
+  "I tried this 1-minute trick for hooks and it worked.",
+  "Stop using boring intros. Do this instead—right now.",
+  "Your niche isn’t the problem. Your hook is."
+];
 
 export default function HomePage() {
   const [topic, setTopic] = useState("");
@@ -17,6 +24,12 @@ export default function HomePage() {
   const [copiedIndex, setCopiedIndex] = useState(null);
   const [isPaywalled, setIsPaywalled] = useState(false);
   const [hasPaidAccess, setHasPaidAccess] = useState(false);
+  const [hasEmailCaptured, setHasEmailCaptured] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailInput, setEmailInput] = useState("");
+  const [emailSubmitting, setEmailSubmitting] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [pendingGenerate, setPendingGenerate] = useState(false);
 
   useEffect(() => {
     const initializeAccess = async () => {
@@ -32,6 +45,10 @@ export default function HomePage() {
       } catch {
         paidAccess = false;
       }
+
+      const emailCaptured =
+        typeof window !== "undefined" &&
+        localStorage.getItem(EMAIL_CAPTURE_KEY) === "true";
 
       const params = new URLSearchParams(window.location.search);
       const isUpgraded = params.get("upgraded") === "true";
@@ -59,14 +76,17 @@ export default function HomePage() {
 
       setHasPaidAccess(paidAccess);
       setIsPaywalled(hasUsedFreeGeneration && !paidAccess);
+      setHasEmailCaptured(Boolean(emailCaptured));
     };
 
     initializeAccess();
   }, []);
 
-  const generateHooks = async () => {
+  const generateHooksInternal = async () => {
     if (isPaywalled) {
-      setError("You've used your free generation. Unlock unlimited hooks for $5");
+      setError(
+        "Your next viral hooks are locked. Unlock limited-time $5 lifetime access."
+      );
       return;
     }
 
@@ -108,6 +128,18 @@ export default function HomePage() {
     }
   };
 
+  const generateHooks = async () => {
+    if (!hasEmailCaptured) {
+      setEmailModalOpen(true);
+      setPendingGenerate(true);
+      setEmailError("");
+      return;
+    }
+
+    setPendingGenerate(false);
+    await generateHooksInternal();
+  };
+
   const copyHook = async (hook, index) => {
     try {
       await navigator.clipboard.writeText(hook);
@@ -140,6 +172,7 @@ export default function HomePage() {
   const resetFreeTrial = async () => {
     localStorage.removeItem(FREE_GENERATION_STORAGE_KEY);
     await fetch("/api/clear-paid-access", { method: "POST" });
+    localStorage.removeItem(EMAIL_CAPTURE_KEY);
     setIsPaywalled(false);
     setHasPaidAccess(false);
     setHooks([]);
@@ -147,13 +180,106 @@ export default function HomePage() {
     setCopiedIndex(null);
   };
 
+  const validateEmail = (email) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const submitEmail = async () => {
+    setEmailError("");
+    const email = emailInput.trim();
+    if (!email) {
+      setEmailError("Email is required (or choose Skip).");
+      return;
+    }
+    if (!validateEmail(email)) {
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
+
+    setEmailSubmitting(true);
+    try {
+      const response = await fetch("/api/capture-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to save email.");
+      }
+
+      localStorage.setItem(EMAIL_CAPTURE_KEY, "true");
+      setHasEmailCaptured(true);
+      setEmailModalOpen(false);
+      setEmailInput("");
+
+      if (pendingGenerate) {
+        setPendingGenerate(false);
+        await generateHooksInternal();
+      }
+    } catch (err) {
+      setEmailError(err.message || "Unable to submit email.");
+    } finally {
+      setEmailSubmitting(false);
+    }
+  };
+
+  const skipEmailCapture = async () => {
+    localStorage.setItem(EMAIL_CAPTURE_KEY, "true");
+    setHasEmailCaptured(true);
+    setEmailModalOpen(false);
+    setEmailError("");
+    setEmailInput("");
+
+    if (pendingGenerate) {
+      setPendingGenerate(false);
+      await generateHooksInternal();
+    }
+  };
+
   return (
     <main className="page">
       <section className="card">
-        <h1>Generate Viral TikTok Hooks in Seconds</h1>
-        <p className="subtitle">
-          Enter your idea and get 10 scroll-stopping hooks instantly.
-        </p>
+        <div className="hero">
+          <h1 className="hero-title">Steal 10 Viral TikTok Hooks in 5 Seconds</h1>
+          <p className="hero-subtitle">
+            Type a topic, pick a tone, and get 10 scroll-stopping hooks you can
+            copy instantly. Built around viral curiosity, controversy, and story
+            psychology.
+          </p>
+
+          <div className="trust-row">
+            <span className="chip">Viral psychology patterns</span>
+            <span className="chip">Creator-tested prompting</span>
+            <span className="chip">Under 15 words each</span>
+          </div>
+
+          <div className="example-wrap">
+            <div className="example-title">Examples (no signup)</div>
+            <div className="examples-grid">
+              {exampleHooks.map((hook, idx) => (
+                <div key={idx} className="example-hook">
+                  {hook}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="how-grid">
+            <div className="how-step">
+              <div className="how-num">1</div>
+              <div className="how-text">Enter your topic</div>
+            </div>
+            <div className="how-step">
+              <div className="how-num">2</div>
+              <div className="how-text">Choose audience + tone</div>
+            </div>
+            <div className="how-step">
+              <div className="how-num">3</div>
+              <div className="how-text">Generate & copy instantly</div>
+            </div>
+          </div>
+        </div>
 
         <div className="form-grid">
           <label className="label">
@@ -215,10 +341,14 @@ export default function HomePage() {
           )}
         </div>
 
+        <p className="cta-small">1 free use • $5 unlimited</p>
+
         {isPaywalled && (
           <div className="paywall-box">
             <p className="paywall-message">
-              You've used your free generation. Unlock unlimited hooks for $5
+              Don’t let your next post miss the hook.
+              <br />
+              Limited-time $5 lifetime access unlocks unlimited generations.
             </p>
             <button
               type="button"
@@ -258,6 +388,49 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {emailModalOpen && (
+        <div className="modal-overlay" role="dialog" aria-modal="true">
+          <div className="modal">
+            <div className="modal-title">Enter your email to get your free viral hooks</div>
+            <div className="modal-subtitle">
+              We may send more viral hook strategies.
+            </div>
+
+            <label className="label" style={{ marginTop: 12 }}>
+              Email
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="you@example.com"
+                className="input"
+              />
+            </label>
+
+            {emailError && <p className="error modal-error">{emailError}</p>}
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="button primary"
+                onClick={submitEmail}
+                disabled={emailSubmitting}
+              >
+                {emailSubmitting ? "Saving..." : "Send me the free hooks"}
+              </button>
+              <button
+                type="button"
+                className="button secondary"
+                onClick={skipEmailCapture}
+                disabled={emailSubmitting}
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
