@@ -9,7 +9,9 @@
 body {
   margin: 0;
   font-family: Inter, "Segoe UI", Roboto, sans-serif;
-  background: #f4f6fb;
+  background: radial-gradient(1200px 600px at 20% 0%, #eef2ff 0%, rgba(238, 242, 255, 0) 60%),
+    radial-gradient(900px 500px at 90% 10%, #fff7ed 0%, rgba(255, 247, 237, 0) 55%),
+    #f4f6fb;
   color: #111827;
 }
 
@@ -27,7 +29,23 @@ body {
   border: 1px solid #e5e7eb;
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.08), rgba(245, 158, 11, 0.06));
+  pointer-events: none;
+  opacity: 0.8;
+  mask-image: radial-gradient(500px 220px at 20% 0%, #000 0%, transparent 70%);
+}
+
+.card > * {
+  position: relative;
 }
 
 h1 {
@@ -59,9 +77,9 @@ h1 {
 }
 
 .chip {
-  background: #eef2ff;
+  background: rgba(238, 242, 255, 0.9);
   border: 1px solid #e0e7ff;
-  color: #3730a3;
+  color: #312e81;
   border-radius: 999px;
   padding: 6px 10px;
   font-weight: 700;
@@ -95,6 +113,7 @@ h1 {
   padding: 10px 12px;
   color: #111827;
   font-weight: 600;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
 }
 
 .how-grid {
@@ -112,6 +131,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 12px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
 }
 
 .how-num {
@@ -164,6 +184,14 @@ h1 {
   border-radius: 10px;
   padding: 12px;
   font-size: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.18);
 }
 
 .actions {
@@ -179,6 +207,17 @@ h1 {
   padding: 10px 14px;
   font-weight: 600;
   cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.10);
 }
 
 .button:disabled {
@@ -191,9 +230,17 @@ h1 {
   color: #ffffff;
 }
 
+.primary:hover:not(:disabled) {
+  background: #0b1220;
+}
+
 .secondary {
   background: #e5e7eb;
   color: #111827;
+}
+
+.secondary:hover:not(:disabled) {
+  background: #dbe2ea;
 }
 
 .upgrade {
@@ -201,10 +248,18 @@ h1 {
   color: #111827;
 }
 
+.upgrade:hover:not(:disabled) {
+  background: #fbbf24;
+}
+
 .copy {
   background: #eef2ff;
   color: #3730a3;
   min-width: 74px;
+}
+
+.copy:hover:not(:disabled) {
+  background: #e0e7ff;
 }
 
 .error {
@@ -222,6 +277,7 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.12);
 }
 
 .paywall-message {
@@ -290,6 +346,7 @@ h1 {
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 10px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
 }
 
 .hook-item span {
@@ -318,5 +375,15 @@ h1 {
 
   .how-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 640px) {
+  .examples-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .how-grid {
+    grid-template-columns: 1fr 1fr 1fr;
   }
 }
