@@ -95,6 +95,11 @@ h1 {
   color: #111827;
 }
 
+.upgrade {
+  background: #f59e0b;
+  color: #111827;
+}
+
 .copy {
   background: #eef2ff;
   color: #3730a3;
@@ -104,6 +109,24 @@ h1 {
 .error {
   color: #b91c1c;
   margin-top: 12px;
+}
+
+.paywall-box {
+  margin-top: 14px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.paywall-message {
+  margin: 0;
+  color: #92400e;
+  font-weight: 600;
 }
 
 .hooks-list {
@@ -141,5 +164,10 @@ h1 {
 
   .copy {
     width: 100%;
+  }
+
+  .paywall-box {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

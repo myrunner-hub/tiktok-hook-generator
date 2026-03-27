@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const toneOptions = ["funny", "dramatic", "educational", "controversial"];
+const FREE_GENERATION_STORAGE_KEY = "tt_hookgen_used_free_generation";
+const IS_DEV = process.env.NODE_ENV !== "production";
 
 export default function HomePage() {
   const [topic, setTopic] = useState("");
@@ -12,8 +14,21 @@ export default function HomePage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState(null);
+  const [isPaywalled, setIsPaywalled] = useState(false);
+
+  useEffect(() => {
+    const hasUsedFreeGeneration =
+      typeof window !== "undefined" &&
+      localStorage.getItem(FREE_GENERATION_STORAGE_KEY) === "true";
+    setIsPaywalled(hasUsedFreeGeneration);
+  }, []);
 
   const generateHooks = async () => {
+    if (isPaywalled) {
+      setError("You've used your free generation. Unlock unlimited hooks for $5");
+      return;
+    }
+
     if (!topic.trim()) {
       setError("Topic is required.");
       return;
@@ -41,6 +56,8 @@ export default function HomePage() {
 
       setHooks(data.hooks || []);
       setCopiedIndex(null);
+      localStorage.setItem(FREE_GENERATION_STORAGE_KEY, "true");
+      setIsPaywalled(true);
     } catch (err) {
       setError(err.message || "Something went wrong.");
     } finally {
@@ -56,6 +73,18 @@ export default function HomePage() {
     } catch (err) {
       setError("Failed to copy hook.");
     }
+  };
+
+  const onUpgradeClick = () => {
+    setError("Stripe integration coming soon. Upgrade flow placeholder only.");
+  };
+
+  const resetFreeTrial = () => {
+    localStorage.removeItem(FREE_GENERATION_STORAGE_KEY);
+    setIsPaywalled(false);
+    setHooks([]);
+    setError("");
+    setCopiedIndex(null);
   };
 
   return (
@@ -110,7 +139,7 @@ export default function HomePage() {
             type="button"
             className="button primary"
             onClick={generateHooks}
-            disabled={loading}
+            disabled={loading || isPaywalled}
           >
             {loading ? "Generating..." : "Generate Hooks"}
           </button>
@@ -119,12 +148,27 @@ export default function HomePage() {
               type="button"
               className="button secondary"
               onClick={generateHooks}
-              disabled={loading}
+              disabled={loading || isPaywalled}
             >
               Regenerate
             </button>
           )}
         </div>
+
+        {isPaywalled && (
+          <div className="paywall-box">
+            <p className="paywall-message">
+              You've used your free generation. Unlock unlimited hooks for $5
+            </p>
+            <button
+              type="button"
+              className="button upgrade"
+              onClick={onUpgradeClick}
+            >
+              Upgrade
+            </button>
+          </div>
+        )}
 
         {error && <p className="error">{error}</p>}
 
@@ -143,6 +187,14 @@ export default function HomePage() {
               </li>
             ))}
           </ol>
+        )}
+
+        {IS_DEV && (
+          <div className="actions">
+            <button type="button" className="button secondary" onClick={resetFreeTrial}>
+              Reset Free Trial (Dev)
+            </button>
+          </div>
         )}
       </section>
     </main>
