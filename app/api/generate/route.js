@@ -26,11 +26,17 @@ const ipRequestStore = globalThis.__ipRequestStore || new Map();
 globalThis.__ipRequestStore = ipRequestStore;
 
 function parseHooks(content) {
+  const metaLinePattern =
+    /^(here are|these are|top\s*\d+|hooks?:|sure[,!]?|absolutely[,!]?|based on)/i;
+
   return content
     .split("\n")
     .map((line) => line.replace(/^\s*\d+[\).\-\s]*/, "").trim())
+    .map((line) => line.replace(/^\s*[-*]\s*/, "").trim())
     .filter(Boolean)
     .map((line) => line.replace(/^["']|["']$/g, ""))
+    .filter((line) => !metaLinePattern.test(line))
+    .filter((line) => !line.endsWith(":"))
     .filter((line) => line.split(/\s+/).length <= MAX_WORDS)
     .slice(0, 10);
 }
