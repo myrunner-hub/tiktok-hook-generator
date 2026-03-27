@@ -9,6 +9,9 @@ Rules:
 - Use curiosity, shock, controversy, or emotional triggers
 - Avoid generic phrasing
 - Make each hook feel like it would stop scrolling instantly
+- Every hook must use a different psychological angle (no repeated trigger)
+- Include a balanced mix of controversial, curiosity-based, and story-based hooks
+- Avoid repeated openings, repeated phrasing, and repeated sentence structure
 
 Return as a numbered list.`;
 
@@ -28,16 +31,31 @@ globalThis.__ipRequestStore = ipRequestStore;
 function parseHooks(content) {
   const metaLinePattern =
     /^(here are|these are|top\s*\d+|hooks?:|sure[,!]?|absolutely[,!]?|based on)/i;
+  const seen = new Set();
 
   return content
     .split("\n")
     .map((line) => line.replace(/^\s*\d+[\).\-\s]*/, "").trim())
     .map((line) => line.replace(/^\s*[-*]\s*/, "").trim())
+    .map((line) =>
+      line.replace(
+        /^\s*(curiosity|controversy|controversial|story|shock|emotional|fear|urgency|social proof|contrarian)\s*[:\-]\s*/i,
+        ""
+      )
+    )
     .filter(Boolean)
     .map((line) => line.replace(/^["']|["']$/g, ""))
     .filter((line) => !metaLinePattern.test(line))
     .filter((line) => !line.endsWith(":"))
     .filter((line) => line.split(/\s+/).length <= MAX_WORDS)
+    .filter((line) => {
+      const normalized = line.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+      if (!normalized || seen.has(normalized)) {
+        return false;
+      }
+      seen.add(normalized);
+      return true;
+    })
     .slice(0, 10);
 }
 
@@ -163,6 +181,17 @@ export async function POST(request) {
       `Topic: ${topic.trim()}`,
       audience?.trim() ? `Audience: ${audience.trim()}` : null,
       tone?.trim() ? `Tone: ${tone.trim()}` : null,
+      "Use these 10 unique angles exactly once each:",
+      "1) Curiosity gap",
+      "2) Controversial opinion",
+      "3) Story/confession",
+      "4) Fear/loss avoidance",
+      "5) Social proof",
+      "6) Contrarian take",
+      "7) Secret/reveal",
+      "8) Emotional vulnerability",
+      "9) Urgency/time pressure",
+      "10) Transformation/before-after",
     ]
       .filter(Boolean)
       .join("\n");
