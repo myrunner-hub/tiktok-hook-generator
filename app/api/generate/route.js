@@ -13,6 +13,12 @@ Rules:
 Return as a numbered list.`;
 
 const MAX_WORDS = 15;
+const GROQ_MODEL = process.env.GROQ_MODEL || "llama-3.3-70b-versatile";
+const FALLBACK_MODELS = [
+  "llama-3.3-70b-versatile",
+  "llama-3.1-8b-instant",
+  "mixtral-8x7b-32768",
+];
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_MAX_REQUESTS = 8;
 
@@ -55,6 +61,72 @@ function isRateLimited(ip) {
   return false;
 }
 
+function isModelUnavailable(errorPayloadText, errorPayloadJson) {
+  const errorCode = errorPayloadJson?.error?.code || "";
+  const errorMessage = errorPayloadJson?.error?.message || errorPayloadText;
+  const normalizedMessage = String(errorMessage).toLowerCase();
+
+  return (
+    errorCode === "model_decommissioned" ||
+    normalizedMessage.includes("decommissioned") ||
+    normalizedMessage.includes("model") && normalizedMessage.includes("not found")
+  );
+}
+
+async function generateWithFallback(userPrompt) {
+  const modelsToTry = [GROQ_MODEL, ...FALLBACK_MODELS].filter(
+    (value, index, array) => value && array.indexOf(value) === index
+  );
+
+  let lastError = null;
+
+  for (const model of modelsToTry) {
+    const completion = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0.9,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+        }),
+      }
+    );
+
+    if (completion.ok) {
+      const data = await completion.json();
+      return { data, model };
+    }
+
+    const errorText = await completion.text();
+    let errorJson = null;
+    try {
+      errorJson = JSON.parse(errorText);
+    } catch {
+      errorJson = null;
+    }
+
+    lastError = {
+      status: completion.status,
+      message: errorText,
+      model,
+    };
+
+    if (!isModelUnavailable(errorText, errorJson)) {
+      break;
+    }
+  }
+
+  throw lastError || { status: 502, message: "Unknown Groq API error." };
+}
+
 export async function POST(request) {
   try {
     const { topic, audience, tone } = await request.json();
@@ -89,34 +161,16 @@ export async function POST(request) {
       .filter(Boolean)
       .join("\n");
 
-    const completion = await fetch(
-      "https://api.groq.com/openai/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "llama3-70b-8192",
-          temperature: 0.9,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: userPrompt },
-          ],
-        }),
-      }
-    );
-
-    if (!completion.ok) {
-      const errorText = await completion.text();
+    let data;
+    try {
+      const result = await generateWithFallback(userPrompt);
+      data = result.data;
+    } catch (apiError) {
       return NextResponse.json(
-        { error: `Groq request failed: ${errorText}` },
-        { status: completion.status }
+        { error: `Groq request failed: ${apiError.message}` },
+        { status: apiError.status || 502 }
       );
     }
-
-    const data = await completion.json();
     const content = data?.choices?.[0]?.message?.content || "";
     const hooks = parseHooks(content);
 
